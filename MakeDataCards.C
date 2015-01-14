@@ -41,7 +41,7 @@ void MakeDataCards(int mGlu, int MLSP, TString Options="",  bool SingleBin=false
         WJ_[b]=(TH3F*)f0->Get(TString::Format("WJ__b%d",b).Data());
         ZI_[b]=(TH3F*)f0->Get(TString::Format("ZI__b%d",b).Data());
     }
-    const int totalbins=nBinsjets*nBinsHT*nBinsMHT*nBinsBjets;
+    const int totalbins=72;
 
     float sig[totalbins];
     float qcd[totalbins];
@@ -59,22 +59,48 @@ void MakeDataCards(int mGlu, int MLSP, TString Options="",  bool SingleBin=false
                 for ( int ij=1; ij<=3; ij++ ) {
                     
                     {
+                        //Need to merge some bins
                         // std::cout<<sig4t_[nb]->GetBinContent( ij, mhti, hti )<<std::endl;
+                        if(hti<2 && mhti==3)continue;
+                        if(mhti==2){
+                            if(hti==2)continue;
+                            sig[ibin]=sig4t_[nb]->GetBinContent( ij, mhti, 1 )+sig4t_[nb]->GetBinContent( ij, mhti, 2 );
+                            qcd[ibin]=qcd_[nb]->GetBinContent( ij, mhti, 1 )+qcd_[nb]->GetBinContent( ij, mhti, 2 );
+                            zi[ibin]=ZI_[nb]->GetBinContent( ij, mhti, 1 )+ZI_[nb]->GetBinContent( ij, mhti, 2 );
+                            wj[ibin]=WJ_[nb]->GetBinContent( ij, mhti, 1 )+WJ_[nb]->GetBinContent( ij, mhti, 2 );
+                            ttbar[ibin]=tt_[nb]->GetBinContent( ij, mhti, 1)+tt_[nb]->GetBinContent( ij, mhti, 2);
+                            ++ibin;
+                        }
+                        if(mhti==3){
+                            if(hti==3)continue;
+                            sig[ibin]=sig4t_[nb]->GetBinContent( ij, mhti, 2 )+sig4t_[nb]->GetBinContent( ij, mhti, 3 );
+                            qcd[ibin]=qcd_[nb]->GetBinContent( ij, mhti, 2 )+qcd_[nb]->GetBinContent( ij, mhti, 3 );
+                            zi[ibin]=ZI_[nb]->GetBinContent( ij, mhti, 2 )+ZI_[nb]->GetBinContent( ij, mhti, 3 );
+                            wj[ibin]=WJ_[nb]->GetBinContent( ij, mhti, 2 )+WJ_[nb]->GetBinContent( ij, mhti, 3 );
+                            ttbar[ibin]=tt_[nb]->GetBinContent( ij, mhti, 2)+tt_[nb]->GetBinContent( ij, mhti, 3);
+                            ++ibin;
+                        }
+                        if(mhti<2){
                         sig[ibin]=sig4t_[nb]->GetBinContent( ij, mhti, hti );
                         qcd[ibin]=qcd_[nb]->GetBinContent( ij, mhti, hti );
                         zi[ibin]=ZI_[nb]->GetBinContent( ij, mhti, hti );
                         wj[ibin]=WJ_[nb]->GetBinContent( ij, mhti, hti );
                         ttbar[ibin]=tt_[nb]->GetBinContent( ij, mhti, hti );
+                        
                         //for now observed data is set to total bkg yield
                         obs[ibin]=qcd[ibin]+ zi[ibin]+wj[ibin]+ttbar[ibin] + (mu*sig[ibin]);
                         if( qcd[ibin]+zi[ibin]+wj[ibin]+ttbar[ibin]<0.00000001)std::cout<<"ERROR:Bkg 0 for this bin"<<std::endl;
-                        ++ibin;
+                            ++ibin;
+
+                        }
+                        
+                        std::cout<<"Ibin "<<ibin<<std::endl;
                     }
                 }
             }
         }
     }
-    return;
+
 
     //define different datacard modes
     if(SingleBin){
@@ -137,7 +163,7 @@ void MakeDataCards(int mGlu, int MLSP, TString Options="",  bool SingleBin=false
             fprintf(fp, "\nbin ");
             for(int i=0; i<totalbins; ++i)fprintf(fp, "%d %d %d %d %d ", i, i, i, i, i);
             fprintf(fp, "\nprocess ");
-            for(int i=0; i<totalbins; ++i)fprintf(fp, "sig QCD, Zinv, WJ, ttbar ");
+            for(int i=0; i<totalbins; ++i)fprintf(fp, "sig QCD Zinv WJ ttbar ");
             fprintf(fp, "\nprocess ");
             for(int i=0; i<totalbins; ++i)fprintf(fp, " %d %d %d %d %d", 0,1,2,3,4);
             fprintf(fp, "\nrate ");
@@ -162,7 +188,7 @@ void MakeInputHiso(int mGlu, int MLSP){  //all input files
     float HTBinRectangular[4]={500., 800., 1200.,9999.};//can do 150 to
     
     char bcutstringRectangular[nBinsBjets][100] = { "nbjets==0", "nbjets==1","nbjets==2", "nbjets>=3" } ;
-    float NJets[4]={3, 6,8,99};
+    float NJets[4]={4, 7,9,99};
 
 TChain t1tt("reducedTree");
 t1tt.Add(TString::Format("reducedTree.JES0_JER0_PFMETTypeI_METunc0_PUunc0_hpt20.SMS-T1tttt_2J_mGl-%d_mLSP-%d_Tune4C_13TeV-madgraph-tauola_Spring14miniaod-PU20bx25_POSTLS170_V5-v1_MINIAODSIM_UCSB2120_v73-skim.root", mGlu, MLSP ));
