@@ -100,10 +100,8 @@ void MakeInputHiso(TString Options="Signal", float lumi=4){  //all input files
 
     }
     char weightstring[10000];
-    sprintf(weightstring, "*(weight*%2.2f)", lumi); //bkg xsec weight
+    sprintf(weightstring, "*(weight*%2.2f)", lumi*1000); //bkg xsec weight
     
-    char weightstringSig[10000];
-    //sprintf(weightstringSig, "*((0.0141903 *5000)/(105679.0))"); //sig xsec added by hand for phys14 it will be in the ntuple
     char arg1[1000] ;
     char cuts[10000];
     //yields stored in a TH3* (one for each btag) so 4D
@@ -328,7 +326,7 @@ void fillEventYields(TString Options="Signal", float mu=1.0, float lumi=4.0){
     fprintf(fp,"\\caption{TEST}\n");
     fprintf(fp,"\\end{table}\n");
     fprintf(fp,"\\end{document}\n"); //made Latex File with Yields
-    
+    f0->Close();
 }
 
 //THis prints the data cards with specified Uncertainties (entered by hand for now)
@@ -349,33 +347,31 @@ void MakeCombineDataCards(int mGlu, int MLSP, float mu=1.0, float lumi=4, TStrin
     float qcdscale=10.0;
     float ttbarScale=1.0;
 
-    TString str=(TString::Format("SensStudyLumi%2.2f_Bin%d_M%d_m%d_%s.dat",lumi,bin, mGlu, MLSP,Options.Data())).Data();
+    TString str=(TString::Format("LatestCards/SensStudyLumi%2.2f_Bin%d_M%d_m%d_%s.dat",lumi,bin, mGlu, MLSP,Options.Data())).Data();
     // const char outputfilename[100]=str.Data();
     
     FILE* fp = fopen(  str.Data(), "w" ) ;
     
-    fprintf(fp, "imax %d number of channels\n", 4);//signal region PLUS 3 control bins
-    fprintf(fp, "jmax %d number of backgrounds (QCD, Zinv, WJ, ttbar)\n",4);//4 bkg processes
+    fprintf(fp, "imax %d number of channels\n", 3);//signal region PLUS 3 control bins
+    fprintf(fp, "jmax %d number of backgrounds (QCD, Zinv, WJttbar)\n",3);//4 bkg processes
     fprintf(fp, "kmax * nuissance\n");
     fprintf(fp, "------------\n");
-    fprintf(fp, "bin Bin%d BinContQ%d BinContW%d BinContT%d ", bin,bin, bin,bin);
+    fprintf(fp, "bin Bin%d BinContQ%d BinContW%d ", bin,bin, bin);
     //4 bins
-    fprintf(fp, "\n observation %g %g %g %g", obs[bin], qcdscale*qcd[bin],wj[bin],ttbarScale*ttbar[bin]);
+    fprintf(fp, "\n observation %g %g %g ", obs[bin], qcdscale*qcd[bin],ttbarScale*(wj[bin]+ttbar[bin]));
     //4 Expected Count bins (MC)
-    fprintf(fp, "\nbin Bin%d  Bin%d  Bin%d  Bin%d  Bin%d ",bin, bin,bin, bin, bin);
-    fprintf(fp, "BinContQ%d  BinContQ%d  BinContQ%d  BinContQ%d  BinContQ%d ",bin, bin,bin, bin, bin);
-    fprintf(fp, "BinContW%d  BinContW%d  BinContW%d  BinContW%d  BinContW%d ",bin, bin,bin, bin, bin);
-    fprintf(fp, "BinContT%d  BinContT%d  BinContT%d  BinContT%d  BinContT%d ",bin, bin,bin, bin, bin);
+    fprintf(fp, "\nbin Bin%d  Bin%d  Bin%d  Bin%d ", bin,bin, bin, bin);
+    fprintf(fp, "BinContQ%d  BinContQ%d  BinContQ%d  BinContQ%d ",bin, bin,bin, bin);
+    fprintf(fp, "BinContW%d  BinContW%d  BinContW%d  BinContW%d ", bin,bin, bin, bin);
+    //fprintf(fp, "BinContT%d  BinContT%d  BinContT%d  BinContT%d  BinContT%d ",bin, bin,bin, bin, bin);
     
-    fprintf(fp, "\nprocess sig QCD Zinv WJ ttbar ");
-    fprintf(fp, "sig QCD Zinv WJ ttbar  ");
-    fprintf(fp, "sig QCD Zinv WJ ttbar  ");
-    fprintf(fp, "sig QCD Zinv WJ ttbar ");
+    fprintf(fp, "\nprocess sig QCD Zinv WJttbar ");
+    fprintf(fp, "sig QCD Zinv WJttbar  ");
+    fprintf(fp, "sig QCD Zinv WJttbar  ");
     
-    fprintf(fp, "\nprocess %d %d %d %d %d ", 0, 1,2,3,4);
-    fprintf(fp, "%d %d %d %d %d ",0, 1,2,3,4);
-    fprintf(fp, "%d %d %d %d %d ",0, 1,2,3,4);
-    fprintf(fp, "%d %d %d %d %d ",0, 1,2,3,4);
+    fprintf(fp, "\nprocess %d %d %d %d ", 0, 1,2,3);
+    fprintf(fp, "%d %d %d %d ",0, 1,2,3);
+    fprintf(fp, "%d %d %d %d ",0, 1,2,3);
     
     //NOW THIS IS MY EXPECTED SIGNAL REGION!
     //    fprintf(fp, "\nrate %g %g %g %g %g  ", sig[bin], qcd[bin],zi[bin],wj[bin],ttbar[bin]);
@@ -386,11 +382,11 @@ void MakeCombineDataCards(int mGlu, int MLSP, float mu=1.0, float lumi=4, TStrin
     
     fprintf(fp, " %g ", zi[bin]);
     
-    if(wj[bin]>0.0000000000000000001)fprintf(fp, " %g ",wj[bin]);
+    if(wj[bin]+ttbar[bin]>0.0000000000000000001)fprintf(fp, " %g ",wj[bin]+ttbar[bin]);
     else fprintf(fp, " %g ",1.);
     
-    if(ttbar[bin]>0.0000000000000000001)fprintf(fp, " %g ",ttbar[bin]);
-    else fprintf(fp, " %g ",1.);
+   // if(ttbar[bin]>0.0000000000000000001)fprintf(fp, " %g ",ttbar[bin]);
+   // else fprintf(fp, " %g ",1.);
     
     
     //QCD Region 1
@@ -398,58 +394,45 @@ void MakeCombineDataCards(int mGlu, int MLSP, float mu=1.0, float lumi=4, TStrin
     if(qcd[bin]>0.0000000000000000001)fprintf(fp, " %g ",qcdscale*qcd[bin]);
     else fprintf(fp, " %g ",qcdscale*1.);
     //fprintf(fp, " %g ",10.);
-    fprintf(fp, " %g %g %g ",0., 0., 0.);
+    fprintf(fp, " %g %g ",0., 0.);
     
-    //WJ Region 1
-    fprintf(fp, " %g %g %g ",0.,0.,0.);
-    if(wj[bin]>0.0000000000000000001)fprintf(fp, " %g ",wj[bin]);
+    //WJ/TTbar Region 1
+    fprintf(fp, " %g %g %g",0.,0.,0.0);
+    if(wj[bin]+ttbar[bin]>0.0000000000000000001)fprintf(fp, " %g ",ttbar[bin]+wj[bin]);
     else fprintf(fp, " %g ",1.);
-    fprintf(fp, " %g ",0.);
-    //TT Region 1
-    fprintf(fp, " %g %g %g %g ",0., 0.,0.,0.);
-    if(ttbar[bin]>0.0000000000000000001)fprintf(fp, " %g \n",ttbarScale*ttbar[bin]);
-    else fprintf(fp, " %g \n",ttbarScale*1.);
-    
+    fprintf(fp, "\n");
+   
+
     float logUErr=100.;
-    while(qcdscale*qcd[bin]/logUErr>0.1)logUErr=logUErr+(1*logUErr);
-    fprintf(fp, "rateBqcd%d lnU - %8.1f - - - ",bin, logUErr );
-    fprintf(fp, " - %8.1f - - - ",logUErr);
-    fprintf(fp, " - - - - - ");
-    fprintf(fp, " - - - - - \n");
+   // while(qcdscale*qcd[bin]/logUErr>0.1)logUErr=logUErr+(1*logUErr);
+    fprintf(fp, "rateBqcd%d lnU - %8.1f - - ",bin, logUErr );
+    fprintf(fp, " - %8.1f - - ",logUErr);
+    fprintf(fp, " - - - - ");
+    fprintf(fp, " - - - - \n");
     
     
-    fprintf(fp, "LogBqcd%d lnN - %g - - - ",bin, 1.3 );
-    fprintf(fp, " - - - - - ");
-    fprintf(fp, " - - - - - ");
-    fprintf(fp, " - - - - - \n");
+    fprintf(fp, "LogBqcd%d lnN - %g - -  ",bin, 1.3 );
+    fprintf(fp, " - - - -  ");
+    fprintf(fp, " - - - -  ");
+    fprintf(fp, " - - - -  \n");
     
-    while(wj[bin]/logUErr>0.1)logUErr=logUErr+(1.0*logUErr);
-    fprintf(fp, "rateBW%d lnU - - - %8.1f - ",bin, logUErr );
-    fprintf(fp, " - - - - - ");
-    fprintf(fp, " - - - %8.1f - ",logUErr);
-    fprintf(fp, " - - - - - \n");
+   // while(wj[bin]/logUErr>0.1)logUErr=logUErr+(1.0*logUErr);
+    fprintf(fp, "rateBW%d lnU - - - %8.1f  ",bin, logUErr );
+    fprintf(fp, " - - - -  ");
+    fprintf(fp, " - - - %8.1f  ",logUErr);
+    fprintf(fp, " - - - -  \n");
     
-    fprintf(fp, "LogBW%d lnN - - - %g - ",bin, 1.3 );
-    fprintf(fp, " - - - - - ");
-    fprintf(fp, " - - - - - ");
-    fprintf(fp, " - - - - - \n");
+    fprintf(fp, "LogBW%d lnN - - - %g  ",bin, 1.3 );
+    fprintf(fp, " - - - -  ");
+    fprintf(fp, " - - - -  ");
+    fprintf(fp, " - - - -  \n");
     
-    while(ttbarScale*ttbar[bin]/logUErr>0.1)logUErr=logUErr+(1.0*logUErr);
+
     
-    fprintf(fp, "rateBttbar%d lnU - - - - %8.1f ",bin, logUErr );
-    fprintf(fp, " - - - - - ");
-    fprintf(fp, " - - - - - ");
-    fprintf(fp, " - - - - %8.1f \n",logUErr);
-    
-    fprintf(fp, "rateBtt%d lnN - - - - %g ",bin, 1.3 );
-    fprintf(fp, " - - - - - ");
-    fprintf(fp, " - - - - - ");
-    fprintf(fp, " - - - - - \n");
-    
-    fprintf(fp, "LogBZ%d lnN - - %g - - ",bin, 1.3 );
-    fprintf(fp, " - - - - - ");
-    fprintf(fp, " - - - - - ");
-    fprintf(fp, " - - - - - \n");
+    fprintf(fp, "LogBZ%d lnN - %g - - ",bin, 1.3 );
+    fprintf(fp, " - - - - ");
+    fprintf(fp, " - - - - ");
+    fprintf(fp, " - - - - \n");
 
     
 }
