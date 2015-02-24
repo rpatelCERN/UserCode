@@ -358,7 +358,9 @@ void MakeCombineDataCards(int mGlu, int MLSP, float mu=1.0, float lumi=4, TStrin
     fprintf(fp, "------------\n");
     fprintf(fp, "bin Bin%d BinContQ%d BinContW%d ", bin,bin, bin);
     //4 bins
-    fprintf(fp, "\n observation %g %g %g ", obs[bin], qcdscale*qcd[bin],ttbarScale*(wj[bin]+ttbar[bin]));
+    if(qcd[bin]>0.0000000000000000001 && wj[bin]+ttbar[bin]>0.0000000001)fprintf(fp, "\n observation %g %g %g ", obs[bin], qcdscale*qcd[bin],ttbarScale*(wj[bin]+ttbar[bin]));
+    if(qcd[bin]<0.0000000000000000001 && wj[bin]+ttbar[bin]>0.0000000001) fprintf(fp, "\n observation %g %g %g ", obs[bin], qcdscale,ttbarScale*(wj[bin]+ttbar[bin]));
+        if(qcd[bin]>0.0000000000000000001 && wj[bin]+ttbar[bin]>0.0000000001) fprintf(fp, "\n observation %g %g %g ", obs[bin], qcd[bin],ttbarScale);
     //4 Expected Count bins (MC)
     fprintf(fp, "\nbin Bin%d  Bin%d  Bin%d  Bin%d ", bin,bin, bin, bin);
     fprintf(fp, "BinContQ%d  BinContQ%d  BinContQ%d  BinContQ%d ",bin, bin,bin, bin);
@@ -429,7 +431,7 @@ void MakeCombineDataCards(int mGlu, int MLSP, float mu=1.0, float lumi=4, TStrin
     
 
     
-    fprintf(fp, "LogBZ%d lnN - %g - - ",bin, 1.3 );
+    fprintf(fp, "LogBZ%d lnN - - %g - ",bin, 1.3 );
     fprintf(fp, " - - - - ");
     fprintf(fp, " - - - - ");
     fprintf(fp, " - - - - \n");
